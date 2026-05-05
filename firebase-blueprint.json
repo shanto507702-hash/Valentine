@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user progress and challenge state",
+      "type": "object",
+      "properties": {
+        "currentDay": { "type": "number" },
+        "completedTasks": { 
+          "type": "object",
+          "description": "Map of day index to boolean array [task1Done, task2Done]"
+        },
+        "startDate": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["currentDay", "completedTasks", "startDate"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User specific data"
+    }
+  }
+}

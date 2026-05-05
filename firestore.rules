@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Helpers
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['currentDay', 'completedTasks', 'startDate']) &&
+             data.currentDay is number &&
+             data.startDate is string;
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data) &&
+                    (request.resource.data.diff(resource.data).affectedKeys().hasAll(['completedTasks', 'currentDay']) ||
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedTasks', 'currentDay', 'updatedAt']));
+    }
+  }
+}
